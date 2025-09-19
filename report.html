@@ -28,7 +28,6 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
-            
         }
 
         h1 {
@@ -165,15 +164,7 @@
                 font-size: 1.6rem;
             }
         }
-        .channels {
-      background: #ffffff;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      width: 100%;
-      max-width: 500px;
-    }
-    .channels h2 {
+        .channels h2 {
       text-align: center;
       margin-bottom: 1rem;
       color: #047857;
@@ -198,6 +189,7 @@
       margin-left: 0.6rem;
       font-size: 1rem;
     }
+        
     </style>
 </head>
 
@@ -246,15 +238,15 @@
             <a href="home.html">⬅ Back to Home</a>
         </div>
     </div>
-
-    <!-- ✅ Multi-Channel Access Info -->
+     
+      <!-- ✅ Multi-Channel Access Info -->
   <div class="channels">
     <h2>Report Issues via Multiple Channels</h2>
     <div class="channel-item">📱 <span><b>App</b> – Coming soon </span></div>
     <div class="channel-item">💬 
       <span><b>WhatsApp</b> – 
-        <a href="https://wa.me/919876543210?text=Report%20Civic%20Issue%3A%20Please%20describe%20the%20problem%20(location%2C%20details%2C%20photo%20if%20possible)." target="_blank">
-          +91-9876543210
+        <a href="https://wa.me/919168640206?text=Report%20Civic%20Issue%3A%20Please%20describe%20the%20problem%20(location%2C%20details%2C%20photo%20if%20possible)." target="_blank">
+          +91-9168640206
         </a>
       </span>
     </div>
@@ -274,7 +266,7 @@
         import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
         const SUPABASE_URL = 'https://lxclfklnpktmvtgkpkgg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4Y2xma2xucGt0bXZ0Z2twa2dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyODExNTEsImV4cCI6MjA3Mzg1NzE1MX0.qaAtZrCKsk9w_kIE3A6wX2_U4NAafIaC-pWhPcu3Fzc';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4Y2xma2xucGt0bXZ0Z2twa2dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyODExNTEsImV4cCI6MjA3Mzg1NzE1MX0.qaAtZrCKsk9w_kIE3A6wX2_U4NAafIaC-pWhPcu3Fzc'
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ✅ Pre-select issue type if passed from home.html
@@ -298,7 +290,7 @@
         function initMap() {
             map = L.map('map').setView([18.5204, 73.8567], 12);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '©️ OpenStreetMap contributors',
+                attribution: '© OpenStreetMap contributors',
             }).addTo(map);
 
             map.on('click', (e) => {
@@ -344,7 +336,7 @@
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length) {
                 const newFiles = Array.from(fileInput.files);
-                selectedFiles = selectedFiles.concat(newFiles); // merge
+                selectedFiles = selectedFiles.concat(newFiles);
                 showPreviews(selectedFiles);
                 extractGPS(newFiles[0]);
             }
@@ -437,8 +429,10 @@
         // Reverse geocode
         async function reverseGeocode(lat, lng) {
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-                const data = await res.json();
+               const res = await fetch(
+  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+);
+const data = await res.json();
                 if (data && data.display_name) {
                     document.getElementById('location_text').value = data.display_name || '';
                     const postcode = data.address?.postcode || '';
@@ -453,7 +447,7 @@
             if (!files || files.length === 0) return [];
             const uploadedUrls = [];
             for (const file of files) {
-                const fileName = `${Date.now()}_${file.name}`;
+               const fileName = `${Date.now()}_${file.name}`;
                 const { error: upErr } = await supabase.storage
                     .from(bucketName)
                     .upload(fileName, file);
@@ -473,6 +467,43 @@
             return Number.isFinite(n) ? n : null;
         }
 
+        // ✅ Haversine formula
+        function haversine(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // meters
+            const toRad = x => x * Math.PI / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // ✅ Duplicate check function
+        async function checkForDuplicates(issue, lat, lng, radius = 100) {
+            if (!lat || !lng) return [];
+
+            const latDelta = radius / 111320;
+            const lngDelta = radius / (111320 * Math.cos(lat * Math.PI / 180));
+
+            const { data, error } = await supabase
+                .from("complaints")
+                .select("id, issue_type, latitude, longitude, description")
+                .eq("issue_type", issue)
+                .gte("latitude", lat - latDelta)
+                .lte("latitude", lat + latDelta)
+                .gte("longitude", lng - lngDelta)
+                .lte("longitude", lng + lngDelta);
+
+            if (error) {
+                console.error("Duplicate check error:", error);
+                return [];
+            }
+
+            return data.filter(c => haversine(lat, lng, c.latitude, c.longitude) <= radius);
+        }
+
         async function submitReport(event) {
             event.preventDefault();
 
@@ -486,6 +517,15 @@
             if (!issue || !desc || !location_text) {
                 alert('Please fill issue, description and address');
                 return;
+            }
+
+            // 🔍 Step 1: Check for duplicates
+            const duplicates = await checkForDuplicates(issue, lat, lng, 100);
+            if (duplicates.length > 0) {
+                const proceed = confirm(
+  `⚠ A similar complaint already exists nearby (${duplicates[0].description}).\n\nDo you still want to submit your complaint?`
+);
+                if (!proceed) return;
             }
 
             const savedUser = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -542,6 +582,7 @@
 
         document.getElementById('reportForm').addEventListener('submit', submitReport);
     </script>
+
 </body>
 
 </html>
