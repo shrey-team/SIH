@@ -13,12 +13,15 @@
         }
 
         body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2c8ef4, #14cba8);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+              font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #2c8ef4, #14cba8);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;   /* 👈 stack items vertically */
+    align-items: center;
+    justify-content: flex-start;  /* 👈 start from top */
+    gap: 20px;  /* space between login box and channels */
+    padding: 2rem 1rem;
         }
 
         .auth-container {
