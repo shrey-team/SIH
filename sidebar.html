@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jharkhand Map — Issues</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+    }
+
+    .back-btn a {
+      display: inline-block;
+      text-decoration: none;
+      background: #0077b6;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: background 0.3s ease, transform 0.2s ease;
+      animation: pulse 1.8s infinite;
+    }
+
+    .back-btn a:hover {
+      background: #005f87;
+      transform: scale(1.05);
+    }
+
+    .back-btn a:active {
+      background: #004466;
+      transform: scale(0.98);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0, 119, 182, 0.6); }
+      70% { box-shadow: 0 0 0 20px rgba(0, 119, 182, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 119, 182, 0); }
+    }
+
+    /* Sidebar + Map */
+    #container {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+    }
+
+    #sidebar {
+      width: 300px;
+      background: #f8f8f8;
+      padding: 10px;
+      overflow-y: auto;
+      border-right: 1px solid #ddd;
+      z-index: 500;
+    }
+
+    #sidebar h3 {
+      margin-top: 0;
+    }
+
+    .report {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      cursor: pointer;
+    }
+
+    .report:hover {
+      background: #eee;
+    }
+
+    #map {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="back-btn">
+    <a href="home.html">⬅ Back to Home</a>
+  </div> 
+
+  <div id="container">
+    <div id="sidebar">
+      <h3>Service Requests</h3>
+      <div id="reportList"></div>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Supabase JS -->
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+
+  <script>
+    // Center of Jharkhand
+    const jharkhandCenter = [23.6102, 85.2799];
+    const map = L.map('map').setView(jharkhandCenter, 7);
+
+    // Free OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Show user's location
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const acc = pos.coords.accuracy;
+
+        L.marker([lat, lon]).addTo(map).bindPopup("📍 You are here").openPopup();
+        L.circle([lat, lon], { radius: acc }).addTo(map);
+
+        map.setView([lat, lon], 13);
+      },
+      err => {
+        console.warn("Could not fetch your location: " + err.message);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+
+    // Supabase setup
+    const supabaseUrl = "https://lxclfklnpktmvtgkpkgg.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4Y2xma2xucGt0bXZ0Z2twa2dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyODExNTEsImV4cCI6MjA3Mzg1NzE1MX0.qaAtZrCKsk9w_kIE3A6wX2_U4NAafIaC-pWhPcu3Fzc";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Colors for different issue types
+    const colors = {
+      Pothole: 'brown',
+      Water: 'blue',
+      Waste: 'green',
+      Streetlight: 'yellow',
+      Other: 'red'
+    };
+
+    const reportList = document.getElementById('reportList');
+
+    async function loadReports() {
+      const { data, error } = await supabase
+        .from("complaints")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching complaints:", error);
+        return;
+      }
+
+      data.forEach(report => {
+        // Sidebar entry
+        const div = document.createElement('div');
+        div.className = 'report';
+        div.innerHTML = `
+          <b>${report.issue_type}</b><br>
+          ${report.description || "No description"}<br>
+          <small>${report.location_text || ""}</small><br>
+          <small>Status: ${report.status || "Pending"}</small>
+        `;
+        reportList.appendChild(div);
+
+        // Add marker if lat/lng present
+        if (report.latitude && report.longitude) {
+          const marker = L.circleMarker([report.latitude, report.longitude], {
+            radius: 8,
+            fillColor: colors[report.issue_type] || 'gray',
+            color: '#000',
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+          }).addTo(map);
+
+          let popupContent = `
+            <b>${report.issue_type}</b><br>
+            ${report.description || "No description"}<br>
+            <small>${report.location_text || ""}</small><br>
+            <small>Pincode: ${report.pincode || ""}</small><br>
+            <small>Status: ${report.status || "Pending"}</small><br>
+          `;
+
+          if (report.image_urls) {
+            popupContent += `<img src="${report.image_urls}" alt="issue image" width="120" style="margin-top:5px;border-radius:4px;">`;
+          }
+
+          marker.bindPopup(popupContent);
+
+          // Sidebar click → zoom + popup
+          div.addEventListener('click', () => {
+            map.setView([report.latitude, report.longitude], 15);
+            marker.openPopup();
+          });
+        }
+      });
+    }
+
+    // Load data on page ready
+    loadReports();
+  </script>
+</body>
+</html>
