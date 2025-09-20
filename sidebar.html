@@ -21,35 +21,35 @@
       flex-direction: column;
     }
 
-    .back-btn {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      z-index: 1000;
-    }
+    .sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    .back-btn a {
-      display: inline-block;
-      text-decoration: none;
-      background: #0077b6;
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
-      transition: background 0.3s ease, transform 0.2s ease;
-      animation: pulse 1.8s infinite;
-    }
+.back-btn a {
+  text-decoration: none;
+  background: #0077b6;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  transition: background 0.3s ease, transform 0.2s ease;
+  animation: pulse 1.8s infinite; /* 🔥 add pulse back */
+}
 
-    .back-btn a:hover {
-      background: #005f87;
-      transform: scale(1.05);
-    }
+.back-btn a:hover {
+  background: #005f87;
+  transform: scale(1.05);
+}
 
-    .back-btn a:active {
-      background: #004466;
-      transform: scale(0.98);
-    }
+.back-btn a:active {
+  background: #004466;
+  transform: scale(0.98);
+}
+
+
 
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(0, 119, 182, 0.6); }
@@ -94,17 +94,18 @@
 </head>
 <body>
 
-  <div class="back-btn">
-    <a href="home.html">⬅ Back to Home</a>
-  </div> 
-
   <div id="container">
-    <div id="sidebar">
+  <div id="sidebar">
+    <div class="sidebar-header">
       <h3>Service Requests</h3>
-      <div id="reportList"></div>
+      <div class="back-btn">
+        <a href="home.html">⬅ Back to Home</a>
+      </div>
     </div>
-    <div id="map"></div>
+    <div id="reportList"></div>
   </div>
+  <div id="map"></div>
+</div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
